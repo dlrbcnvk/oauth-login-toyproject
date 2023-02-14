@@ -107,6 +107,11 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         if (userRefreshToken != null) {
             userRefreshToken.setRefreshToken(refreshToken.getToken());
         } else {
+            // 실시간 처리인데, User 엔티티와 UserRefreshToken 간에 연관관계를 맺는 것이 적절한지 의문.
+            // 데이터 정합성을 생각해서 연관관계를 매핑했는데,
+            // 실시간 처리라는 점을 생각하면 정합성 포기하는 대신 쿼리 한번 줄이는 게 더 적절하지 않을까 싶다
+            // 그렇지만 refreshToken 기한이 만료될 때만 User 엔티티를 조회하므로 그렇게 빈번하게 일어나지는 않을 것 같아서
+            // 데이터 정합성을 위해 연관관계를 매핑하는 것이 좋다고 판단
             User findUser = userRepository.findByUserId(userInfo.getId());
             if (findUser == null) {
                 throw new IllegalArgumentException("user not found...");
