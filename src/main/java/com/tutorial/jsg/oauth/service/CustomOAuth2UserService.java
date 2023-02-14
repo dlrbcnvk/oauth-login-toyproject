@@ -7,7 +7,7 @@ import com.tutorial.jsg.oauth.entity.RoleType;
 import com.tutorial.jsg.oauth.entity.UserPrincipal;
 import com.tutorial.jsg.oauth.exception.OAuth2ProviderNotMatchException;
 import com.tutorial.jsg.oauth.userinfo.OAuth2UserInfo;
-import com.tutorial.jsg.oauth.userinfo.UserInfoFactory;
+import com.tutorial.jsg.oauth.userinfo.OAuth2UserInfoFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.core.AuthenticationException;
@@ -46,7 +46,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     private OAuth2User process(OAuth2UserRequest userRequest, OAuth2User user) {
         ProviderType providerType = ProviderType.valueOf(userRequest.getClientRegistration().getRegistrationId());
 
-        OAuth2UserInfo userInfo = UserInfoFactory.getOAuth2UserInfo(providerType, user.getAttributes());
+        OAuth2UserInfo userInfo = OAuth2UserInfoFactory.getOAuth2UserInfo(providerType, user.getAttributes());
         User savedUser = userRepository.findByUserId(userInfo.getId());
 
         if (savedUser != null) {

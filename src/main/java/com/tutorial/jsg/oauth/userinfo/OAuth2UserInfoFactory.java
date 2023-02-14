@@ -6,7 +6,7 @@ import com.tutorial.jsg.oauth.userinfo.impl.GoogleUserInfo;
 
 import java.util.Map;
 
-public class UserInfoFactory {
+public class OAuth2UserInfoFactory {
     public static OAuth2UserInfo getOAuth2UserInfo(ProviderType providerType, Map<String, Object> attributes) {
         switch (providerType) {
             case GOOGLE: return new GoogleUserInfo(attributes);

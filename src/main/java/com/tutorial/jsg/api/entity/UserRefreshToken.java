@@ -24,7 +24,7 @@ public class UserRefreshToken {
     @OneToOne
     @JoinColumn(name = "USER_ID", unique = true)
     @NotNull
-    private User userId;
+    private User user;
 
     @Column(name = "REFRESH_TOKEN", length = 256)
     @NotNull
@@ -34,7 +34,7 @@ public class UserRefreshToken {
         @NotNull User user,
         @NotNull String refreshToken
     ) {
-        this.userId = userId;
+        this.user = user;
         this.refreshToken = refreshToken;
     }
 }
