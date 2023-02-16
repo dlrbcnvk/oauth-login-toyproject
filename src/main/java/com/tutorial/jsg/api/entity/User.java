@@ -67,9 +67,6 @@ public class User {
     @NotNull
     private LocalDateTime modifiedAt;
 
-    @OneToOne(mappedBy = "user")
-    private UserRefreshToken userRefreshToken;
-
     public User(
             @NotNull String userId,
             @NotNull String username,

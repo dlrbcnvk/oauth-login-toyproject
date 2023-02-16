@@ -4,6 +4,7 @@ import com.tutorial.jsg.api.entity.User;
 import com.tutorial.jsg.api.entity.UserRefreshToken;
 import com.tutorial.jsg.api.repository.UserRefreshTokenRepository;
 import com.tutorial.jsg.api.repository.UserRepository;
+import com.tutorial.jsg.config.properties.AppProperties;
 import com.tutorial.jsg.oauth.entity.ProviderType;
 import com.tutorial.jsg.oauth.entity.RoleType;
 import com.tutorial.jsg.oauth.repository.OAuth2AuthorizationRequestBasedOnCookieRepository;
@@ -43,7 +44,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
     private final AuthTokenProvider tokenProvider;
     private final UserRefreshTokenRepository userRefreshTokenRepository;
-    private final UserRepository userRepository;
     private final OAuth2AuthorizationRequestBasedOnCookieRepository authorizationRequestRepository;
 
 
@@ -107,16 +107,27 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         if (userRefreshToken != null) {
             userRefreshToken.setRefreshToken(refreshToken.getToken());
         } else {
-            // 실시간 처리인데, User 엔티티와 UserRefreshToken 간에 연관관계를 맺는 것이 적절한지 의문.
-            // 데이터 정합성을 생각해서 연관관계를 매핑했는데,
-            // 실시간 처리라는 점을 생각하면 정합성 포기하는 대신 쿼리 한번 줄이는 게 더 적절하지 않을까 싶다
-            // 그렇지만 refreshToken 기한이 만료될 때만 User 엔티티를 조회하므로 그렇게 빈번하게 일어나지는 않을 것 같아서
-            // 데이터 정합성을 위해 연관관계를 매핑하는 것이 좋다고 판단
-            User findUser = userRepository.findByUserId(userInfo.getId());
-            if (findUser == null) {
-                throw new IllegalArgumentException("user not found...");
-            }
-            userRefreshToken = new UserRefreshToken(findUser, refreshToken.getToken());
+            /**
+             실시간 처리인데, User 엔티티와 UserRefreshToken 간에 연관관계를 맺는 것이 적절한지 의문.
+             데이터 정합성을 생각해서 연관관계를 매핑했는데,
+             실시간 처리라는 점을 생각하면 정합성 포기하는 대신 쿼리 한번 줄이는 게 더 적절하지 않을까 싶다
+             그렇지만 refreshToken 기한이 만료될 때만 User 엔티티를 조회하므로 그렇게 빈번하게 일어나지는 않을 것 같아서
+             데이터 정합성을 위해 연관관계를 매핑하는 것이 좋다고 판단
+             연관관계가 필요한가...
+             연관관계를 맺는다는 건 하나의 데이터베이스(스키마) 내에서 연관을 맺는다는 것.
+             User 테이블이 앞으로 쓰일 곳이 많을 것이고, 데이터베이스의 커넥션 풀은 한정되어있는데,
+             사용자가 새로운 url 요청할 때마다 jwt 토큰 주고받느라, 그 사이에서 RefreshToken을 db에 저장했다가 조회했다가 그러느라
+             커넥션을 과도하게 사용...
+             커넥션이 문제라면 연관관계를 맺지 않아도 커넥션은 동일하게 많이 사용됨
+             게다가 커넥션 사용은 네트워크 비용이 큼
+             -> 사용자와 주고받는 JWT는 RDB가 아니라 redis에 보관하고 꺼내 쓰는게 좋지 않을까..
+
+             -- redis --
+             redis 호출하는 컨트롤러를 만들고, 필요한 곳에서 restTemplate으로 redis api 요청하여 데이터 넣고 빼고 조회하기...?
+             UserRefreshToken은 어쩌지...jpa랑은 관련없는 거 같은데..?
+            */
+
+            userRefreshToken = new UserRefreshToken(userInfo.getId(), refreshToken.getToken());
             userRefreshTokenRepository.saveAndFlush(userRefreshToken);
         }
 

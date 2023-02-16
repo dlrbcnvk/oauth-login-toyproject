@@ -1,9 +1,11 @@
 package com.tutorial.jsg.config.security;
 
 import com.tutorial.jsg.api.repository.UserRefreshTokenRepository;
+import com.tutorial.jsg.api.repository.UserRepository;
 import com.tutorial.jsg.oauth.entity.RoleType;
 import com.tutorial.jsg.oauth.exception.RestAuthenticationEntryPoint;
 import com.tutorial.jsg.oauth.filter.TokenAuthenticationFilter;
+import com.tutorial.jsg.oauth.handler.OAuth2AuthenticationFailureHandler;
 import com.tutorial.jsg.oauth.handler.OAuth2AuthenticationSuccessHandler;
 import com.tutorial.jsg.oauth.handler.TokenAccessDeniedHandler;
 import com.tutorial.jsg.oauth.repository.OAuth2AuthorizationRequestBasedOnCookieRepository;
@@ -26,6 +28,7 @@ public class SecurityConfig {
     private final AuthTokenProvider tokenProvider;
     private final CustomOAuth2UserService oAuth2UserService;
     private final TokenAccessDeniedHandler tokenAccessDeniedHandler;
+    private final UserRepository userRepository;
     private final UserRefreshTokenRepository userRefreshTokenRepository;
 
 
@@ -38,7 +41,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors()
-                .and()
+            .and()
                 .sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             .and()
@@ -59,7 +62,8 @@ public class SecurityConfig {
                 .userInfoEndpoint()
                 .userService(oAuth2UserService)
             .and()
-                .successHandler(oAuth2AuthenticationSuccessHandler());
+                .successHandler(oAuth2AuthenticationSuccessHandler())
+                .failureHandler(oAuth2AuthenticationFailureHandler());
 
         http.addFilterBefore(tokenAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
@@ -98,8 +102,18 @@ public class SecurityConfig {
     public OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler() {
         return new OAuth2AuthenticationSuccessHandler(
                 tokenProvider,
-                userRefreshTokenRepository
+                userRefreshTokenRepository,
+                userRepository,
+                oAuth2AuthorizationRequestBasedOnCookieRepository()
         );
+    }
+
+    /**
+     * OAuth 인증 실패 핸들러
+     */
+    @Bean
+    public OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler() {
+        return new OAuth2AuthenticationFailureHandler(oAuth2AuthorizationRequestBasedOnCookieRepository());
     }
 
 

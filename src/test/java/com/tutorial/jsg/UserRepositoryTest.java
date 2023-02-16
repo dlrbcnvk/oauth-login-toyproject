@@ -1,6 +1,8 @@
 package com.tutorial.jsg;
 
 import com.tutorial.jsg.api.entity.User;
+import com.tutorial.jsg.api.entity.UserRefreshToken;
+import com.tutorial.jsg.api.repository.UserRefreshTokenRepository;
 import com.tutorial.jsg.api.repository.UserRepository;
 import com.tutorial.jsg.oauth.entity.ProviderType;
 import com.tutorial.jsg.oauth.entity.RoleType;
@@ -21,6 +23,9 @@ public class UserRepositoryTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private UserRefreshTokenRepository userRefreshTokenRepository;
 
     @Test
     @Rollback
@@ -48,6 +53,21 @@ public class UserRepositoryTest {
             userRepository.save(user1);
             userRepository.save(user2);
         }).isInstanceOf(NoSuchElementException.class);
+    }
+
+    @Test
+    @Rollback
+    void userAndToken() {
+        LocalDateTime now = LocalDateTime.now();
+        User user1 = new User("111", "user1", "user@aaa.com", "y", "yy", ProviderType.LOCAL, RoleType.USER, now, now);
+        UserRefreshToken userRefreshToken = new UserRefreshToken(user1.getUserId(), "dsafknjkeaf");
+
+        userRepository.saveAndFlush(user1);
+        userRefreshTokenRepository.saveAndFlush(userRefreshToken);
+
+        UserRefreshToken findToken = userRefreshTokenRepository.findByUserId(user1.getUserId());
+
+        Assertions.assertThat(findToken.getRefreshToken()).isEqualTo(userRefreshToken.getRefreshToken());
     }
 
 }
